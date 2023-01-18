@@ -2,24 +2,26 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from time import sleep
 from datetime import datetime
-
+import undetected_chromedriver as uc
 class lnline:
     def __init__(self) -> None:
         self.options = Options()
-        self.options.add_experimental_option("detach", True)
-        self.chrome = webdriver.Chrome('./helper/chromedriver', chrome_options=self.options)
-        # self.chrome.get("https://inline.app/booking/-MyeIq6w0WlGH5oRFcd_:inline-live-2/-MyeIqIyLZ5S6ZK_Cke5?language=zh-tw")
+        self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        self.options.add_experimental_option('useAutomationExtension', False)
+        self.options.add_argument('--disable-features=TranslateUI')
+        self.options.add_argument('--disable-translate')
+        self.options.add_argument('--lang=zh-TW')
+        self.options.add_argument("--disable-blink-features=AutomationControlled")
+        self.chrome = uc.Chrome()
+      
         self.chrome.get("https://inline.app/booking/-KW_p1r8kjOziXsHmha0:inline-live-thaitown/-KW_p1r8kjOziXsHmha1")
-
         self.start_crawler()
 
     def start_crawler(self) -> None:
-        sleep(2)
+        sleep(1)
         self.findelement_datepicker()
 
     def findelement_datepicker(self):
@@ -65,10 +67,11 @@ class lnline:
                 self.chrome.execute_script("arguments[0].click();", timeslot)
                 sleep(1)
                 nextStep = self.chrome.find_element(By.CLASS_NAME, "sc-dIouRR.hZBVja")
+                nextStep.send_keys(Keys.END)
                 nextStep.click()
-                # self.chrome.execute_script("arguments[0].click();", nextStep)
-                name =WebDriverWait(self.chrome, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "sc-dmRaPn.kkeZyO")))
-     
+                sleep(1)
+                self.setContractInformation()
+                print("訂位成功!!!")
             else:
                 print("找不到對應的時間!!!")
             print("數量:" + len(timeslots))
@@ -77,6 +80,21 @@ class lnline:
             return False
         except Exception as ex:
             return False
+    def setContractInformation(self) -> None:
+        name = self.chrome.find_element(By.ID, "name")
+        name.send_keys("user")
+        # genderfemale = self.chrome.find_element(By.ID, "gender-female")
+        # genderfemale.send_keys(Keys.END)
+        gendermale = self.chrome.find_element(By.ID, "gender-male")
+        self.chrome.execute_script("arguments[0].click();", gendermale)
+        # gendernone = self.chrome.find_element(By.ID, "gender-none")
+        # gendernone.send_keys(Keys.END)
+        phone = self.chrome.find_element(By.ID, "phone")
+        phone.send_keys("0912345678")
+        email = self.chrome.find_element(By.ID, "email")
+        email.send_keys("123@gmail.com")
+        description = self.chrome.find_element(By.CLASS_NAME, "sc-kgflAQ.eSrlOG")
+        description.send_keys("123")
 
     def findNearUserReservationTime(self,timeslots,time) :
         seccond = 99999999
@@ -100,7 +118,7 @@ class lnline:
                     slot = timeslot
             
         return slot
-                
+ 
     def checkDayStatus(self, item, classId) -> int:
         dayElement = item.find_elements(By.CLASS_NAME, classId)
         if (classId == 'sc-eCYdqJ.gBfQcQ') & (len(dayElement) > 0):
